@@ -101,5 +101,5 @@ If you use this workflow, please cite:
 
 ## Acknowledgments
 
-Special thanks to the Borevitz Lab, particularly Viraj Kolhapuri, Dmitry Grishin, 
-Alek Meade, Ashley Jones, and Christopher Bradley for their contributions.
+Special thanks to the Borevitz Lab, particularly Viraj Kolhapuri, Alek Meade, 
+Saige Waugh, Ashley Jones, Christopher Bradley for their contributions.
