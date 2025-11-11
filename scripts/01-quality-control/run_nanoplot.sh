@@ -1,89 +1,96 @@
 #!/bin/bash
-#
-# run_nanoplot.sh - Generate comprehensive read statistics with NanoPlot
-#
-# Usage:
-#   ./run_nanoplot.sh <input_fastq> <output_dir> [threads]
-#
-# Arguments:
-#   input_fastq : Path to input FASTQ file (can be .fastq or .fastq.gz)
-#   output_dir  : Directory for NanoPlot output
-#   threads     : Number of threads (default: 4)
-#
-# Example:
-#   ./run_nanoplot.sh reads.fastq.gz qc/nanoplot 8
-#
+#PBS -P <PROJECT>
+#PBS -q normal
+#PBS -l walltime=05:00:00
+#PBS -l mem=64GB
+#PBS -l jobfs=400GB
+#PBS -l ncpus=8
+#PBS -l storage=scratch/<PROJECT>+gdata/<PROJECT>
+#PBS -l wd
 
 set -euo pipefail
+set -x
 
-# Check arguments
-if [ "$#" -lt 2 ]; then
-    echo "Error: Insufficient arguments"
-    echo "Usage: $0 <input_fastq> <output_dir> [threads]"
-    exit 1
-fi
+# ============================================================================
+# NanoPlot Quality Assessment
+# ============================================================================
+# Description: Generate comprehensive read statistics and quality visualizations
+# Input: FASTQ files (gzipped or uncompressed)
+# Output: NanoStats.txt and NanoPlot-report.html per sample
+# ============================================================================
 
-INPUT_FASTQ="$1"
-OUTPUT_DIR="$2"
-THREADS="${3:-4}"
+# Activate conda environment
+source <CONDA_PATH>/etc/profile.d/conda.sh
+conda activate <QC_ENV_PATH>
 
-# Validate input
-if [ ! -f "$INPUT_FASTQ" ]; then
-    echo "Error: Input file not found: $INPUT_FASTQ"
-    exit 1
-fi
+# Configuration
+NTHREADS=${PBS_NCPUS:-8}
 
-# Create output directory
-mkdir -p "$OUTPUT_DIR"
+# Input/Output paths (MODIFY THESE)
+INPUT_DIR="<INPUT_FASTQ_DIR>"
+OUT_BASE="<OUTPUT_BASE_DIR>"
+OUT_NANOPLOT="${OUT_BASE}/nanoplot"
 
-# Extract sample name
-SAMPLE_NAME=$(basename "$INPUT_FASTQ" .fastq.gz)
-SAMPLE_NAME=${SAMPLE_NAME%.fastq}
+mkdir -p "$OUT_NANOPLOT"
 
-echo "=================================================="
-echo "Running NanoPlot"
-echo "=================================================="
-echo "Input:   $INPUT_FASTQ"
-echo "Output:  $OUTPUT_DIR"
-echo "Sample:  $SAMPLE_NAME"
-echo "Threads: $THREADS"
-echo "=================================================="
+# Local temporary directory on jobfs (faster I/O)
+LOCAL_DIR="${PBS_JOBFS}/nanoplot_work"
+LOCAL_INPUT="${LOCAL_DIR}/input"
+LOCAL_NANOPLOT="${LOCAL_DIR}/nanoplot_results"
 
-# Check if file has reads (skip empty files)
-if [[ "$INPUT_FASTQ" == *.gz ]]; then
-    HAS_READS=$(zcat "$INPUT_FASTQ" | head -n 1 | grep -c '^@' || true)
-else
-    HAS_READS=$(head -n 1 "$INPUT_FASTQ" | grep -c '^@' || true)
-fi
+mkdir -p "$LOCAL_INPUT" "$LOCAL_NANOPLOT"
 
-if [ "$HAS_READS" -eq 0 ]; then
-    echo "Warning: No reads found in $INPUT_FASTQ. Skipping."
-    exit 0
-fi
+# Copy input files to local jobfs
+echo "Copying input files to jobfs..."
+cp "$INPUT_DIR"/*.fastq.gz "$LOCAL_INPUT/" 2>/dev/null || \
+cp "$INPUT_DIR"/*.fq.gz "$LOCAL_INPUT/" 2>/dev/null || \
+cp "$INPUT_DIR"/*.fastq "$LOCAL_INPUT/" 2>/dev/null || \
+cp "$INPUT_DIR"/*.fq "$LOCAL_INPUT/" 2>/dev/null || \
+{ echo "No FASTQ files found in $INPUT_DIR"; exit 1; }
 
-# Run NanoPlot
-NanoPlot \
-    --fastq "$INPUT_FASTQ" \
-    --outdir "$OUTPUT_DIR" \
-    --prefix "${SAMPLE_NAME}_" \
-    --threads "$THREADS" \
-    --loglength \
-    --N50 \
-    --plots hex dot kde \
-    --format png pdf \
-    --title "QC Report: $SAMPLE_NAME"
+# Process each FASTQ file
+for fq_file in "$LOCAL_INPUT"/*.f*q*; do
+    # Extract sample name (remove extensions)
+    sample=$(basename "$fq_file" .fastq.gz)
+    sample=${sample%.fq.gz}
+    sample=${sample%.fastq}
+    sample=${sample%.fq}
+    
+    echo "Processing $sample..."
+    
+    # Check if file contains reads
+    if gzip -dc "$fq_file" 2>/dev/null | grep -m 1 -q '^@' || \
+       cat "$fq_file" 2>/dev/null | grep -m 1 -q '^@'; then
+        
+        # Create sample-specific output directory
+        nanoplot_sample_dir="${LOCAL_NANOPLOT}/nanoplot_${sample}"
+        mkdir -p "$nanoplot_sample_dir"
+        
+        # Run NanoPlot with original options
+        NanoPlot \
+            --fastq "$fq_file" \
+            -o "$nanoplot_sample_dir" \
+            --threads "$NTHREADS" \
+            --loglength \
+            --N50 \
+            --plots dot
+        
+        # Move results to final output with sample-specific names
+        if [ -f "${nanoplot_sample_dir}/NanoStats.txt" ]; then
+            mv "${nanoplot_sample_dir}/NanoStats.txt" "${OUT_NANOPLOT}/${sample}.txt"
+        fi
+        
+        if [ -f "${nanoplot_sample_dir}/NanoPlot-report.html" ]; then
+            mv "${nanoplot_sample_dir}/NanoPlot-report.html" "${OUT_NANOPLOT}/${sample}.html"
+        fi
+        
+        echo "Completed processing $sample"
+    else
+        echo "Skipping $sample: no reads found"
+    fi
+done
 
-# Rename output files for clarity
-if [ -f "${OUTPUT_DIR}/${SAMPLE_NAME}_NanoStats.txt" ]; then
-    mv "${OUTPUT_DIR}/${SAMPLE_NAME}_NanoStats.txt" \
-       "${OUTPUT_DIR}/${SAMPLE_NAME}.nanostats.txt"
-fi
+# Cleanup
+rm -rf "$LOCAL_DIR"
 
-if [ -f "${OUTPUT_DIR}/${SAMPLE_NAME}_NanoPlot-report.html" ]; then
-    mv "${OUTPUT_DIR}/${SAMPLE_NAME}_NanoPlot-report.html" \
-       "${OUTPUT_DIR}/${SAMPLE_NAME}.nanoplot.html"
-fi
-
-echo ""
-echo "NanoPlot completed successfully!"
-echo "Results: $OUTPUT_DIR"
+echo "NanoPlot completed at $(date) on host $(hostname)"
