@@ -9,19 +9,92 @@ PBS scripts for Oxford Nanopore basecalling using Dorado on GPU nodes.
 - Access to NCI GPU queues (`gpuvolta` or `dgxa100`)
 - Modules: `cuda`, `samtools`, `parallel`
 
-## Workflow Overview
+## Important: Organizing Multiple Sequencing Runs
+
+### Best Practice: Process Each Run Separately
+
+If you have POD5 files from multiple sequencing runs in the same directory, **organize them by run BEFORE basecalling**.
+
+#### Identifying Different Runs
+
+POD5 files contain run IDs in their filenames. For example:
 ```
-POD5 files
+PBE46605_skip_0df7786f_bf504bcd_0.pod5    # Run 1
+PBE46605_skip_ba040519_dfe5b02b_0.pod5    # Run 2
+PBE46605_skip_c8f27651_3dbe505c_0.pod5    # Run 3
+```
+
+The format is: `<flowcell>_<mode>_<run_id>_<unique_id>_<number>.pod5`
+
+## Step 0: Organize POD5 Files by Run
+```bash
+#!/bin/bash
+# Organize POD5 files into run-specific directories
+
+SOURCE_DIR="/path/to/mixed/pod5/files"
+OUTPUT_BASE="/path/to/organized/pod5"
+
+mkdir -p "$OUTPUT_BASE"
+
+# Extract unique run IDs
+cd "$SOURCE_DIR"
+for pod5 in *.pod5; do
+    # Extract run ID (third underscore-separated field)
+    run_id=$(echo "$pod5" | cut -d'_' -f3)
+    
+    # Create directory for this run
+    run_dir="$OUTPUT_BASE/run_${run_id}"
+    mkdir -p "$run_dir"
+    
+    # Move or copy file
+    mv "$pod5" "$run_dir/"  # Use 'cp' if you want to keep originals
+done
+
+echo "POD5 files organized by run:"
+ls -d "$OUTPUT_BASE"/run_*
+```
+
+#### Expected Structure After Organization
+```
+organized/
+├── run_0df7786f/
+│   ├── PBE46605_skip_0df7786f_bf504bcd_0.pod5
+│   ├── PBE46605_skip_0df7786f_bf504bcd_1.pod5
+│   └── ...
+├── run_ba040519/
+│   ├── PBE46605_skip_ba040519_dfe5b02b_0.pod5
+│   └── ...
+└── run_c8f27651/
+    ├── PBE46605_skip_c8f27651_3dbe505c_0.pod5
+    └── ...
+```
+
+---
+
+## Workflow Overview
+
+### For Single Run
+```
+POD5 files (single run)
     ↓
 [1] run_dorado_basecaller.sh → Basecalled BAM (all barcodes)
     ↓
-[2] run_dorado_demux.sh → Per-barcode BAM + FASTQ.gz files
+[2] run_dorado_demux.sh → Per-barcode FASTQ.gz files
 ```
 
-If basecalling fails partway through:
+### For Multiple Runs (Recommended)
 ```
-[1b] resume_dorado_basecaller.sh → Resume from incomplete BAM
+POD5 files (multiple runs mixed)
+    ↓
+[0] Organize by run ID → Separate directories per run
+    ↓
+[1] run_dorado_basecaller.sh → One BAM per run
+    ↓
+[2] run_dorado_demux.sh → Per-barcode FASTQ per run
+    ↓
+[3] Merge same barcodes across runs (optional)
 ```
+
 
 ---
 
@@ -226,78 +299,6 @@ Specify exactly as shown in Dorado's `--kit-name` option.
 2. Edit resume script with paths
 3. Submit resume job
 4. Repeat if necessary
-
-### Nested Directories from Demux
-
-After running `run_dorado_demux.sh`, you get nested directories instead of per-barcode files:
-```
-demux_BAM/
-├── Batch3_I/
-│   └── 20251029_0909_0_PBE46605_ba040519/
-│       └── fastq_pass/
-│           └── PBE46605_pass_ba040519_00000000_0.fastq
-```
-
-Instead of the expected:
-```
-demux_BAM/
-├── barcode01.fastq
-├── barcode02.fastq
-...
-```
-
-### Cause
-
-This happens when:
-1. You merged multiple BAM files from different sequencing runs
-2. The BAM has complex read group (RG) structure
-3. Dorado demux organizes by run metadata instead of just barcodes
-
-### Solution: Use `split_fastq_by_barcode.sh`
-
-Use this script when:
-1. You already have a mixed FASTQ file from dorado demux
-2. The FASTQ contains reads from multiple barcodes mixed together
-3. Barcode information is in the read headers (RG tags)
-4. You want to separate them without going back to BAM
-
-### Usage
-```bash
-# Edit script to set paths
-nano split_fastq_by_barcode.sh
-
-# Set:
-# - inputFASTQ: Path to mixed FASTQ file
-# - outputDir: Output directory for per-barcode files
-
-# Submit job
-qsub split_fastq_by_barcode.sh
-```
-
-### Example
-
-**Input FASTQ header:**
-```
-@c34bef41-4470-4c94-9510-b4ddbd066df6 RG:Z:ba040519...SQK-NBD114-96_barcode11
-```
-
-**Output:**
-```
-outputDir/
-├── barcode01.fastq.gz
-├── barcode11.fastq.gz
-├── barcode05.fastq.gz
-...
-└── unclassified.fastq.gz
-```
-
-### Features
-
-- Handles both compressed (.gz) and uncompressed FASTQ
-- Zero-pads barcode numbers (barcode01, barcode02, etc.)
-- Reports read counts per barcode
-- Automatically creates output files as needed
-- Memory efficient (streams data)
 
 ---
 
