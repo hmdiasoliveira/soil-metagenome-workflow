@@ -253,48 +253,51 @@ This happens when:
 2. The BAM has complex read group (RG) structure
 3. Dorado demux organizes by run metadata instead of just barcodes
 
-### Solution: Use `split_barcoded_bam.sh`
+### Solution: Use `split_fastq_by_barcode.sh`
 
-This script uses `samtools split` instead of `dorado demux`:
+Use this script when:
+1. You already have a mixed FASTQ file from dorado demux
+2. The FASTQ contains reads from multiple barcodes mixed together
+3. Barcode information is in the read headers (RG tags)
+4. You want to separate them without going back to BAM
+
+### Usage
 ```bash
 # Edit script to set paths
-nano split_barcoded_bam.sh
+nano split_fastq_by_barcode.sh
 
-# Set paths:
-# - inputBAM: Your merged barcoded BAM file
-# - tempBAMDir: Temporary directory for intermediate BAM files
-# - fastqDir: Final output directory for FASTQ files
+# Set:
+# - inputFASTQ: Path to mixed FASTQ file
+# - outputDir: Output directory for per-barcode files
 
 # Submit job
-qsub split_barcoded_bam.sh
+qsub split_fastq_by_barcode.sh
 ```
 
-**What it does:**
-1. Splits BAM by read groups using `samtools split`
-2. Extracts barcode numbers from RG headers
-3. Converts each barcode's BAM to FASTQ
-4. Merges duplicate barcodes if multiple RGs have same barcode
-5. Produces clean per-barcode FASTQ.gz files
+### Example
+
+**Input FASTQ header:**
+```
+@c34bef41-4470-4c94-9510-b4ddbd066df6 RG:Z:ba040519...SQK-NBD114-96_barcode11
+```
 
 **Output:**
 ```
-fastqDir/
+outputDir/
 ├── barcode01.fastq.gz
-├── barcode02.fastq.gz
-├── barcode03.fastq.gz
+├── barcode11.fastq.gz
+├── barcode05.fastq.gz
 ...
-├── barcode96.fastq.gz
 └── unclassified.fastq.gz
 ```
 
-### When to Use Each Script
+### Features
 
-| Script | Use When | Output |
-|--------|----------|--------|
-| `run_dorado_demux.sh` | Single run, straightforward demux | Per-barcode files |
-| `split_barcoded_bam.sh` | Merged runs, complex RG structure | Per-barcode files |
-
-**Recommendation**: If `run_dorado_demux.sh` produces nested directories, use `split_barcoded_bam.sh` instead.
+- Handles both compressed (.gz) and uncompressed FASTQ
+- Zero-pads barcode numbers (barcode01, barcode02, etc.)
+- Reports read counts per barcode
+- Automatically creates output files as needed
+- Memory efficient (streams data)
 
 ---
 
