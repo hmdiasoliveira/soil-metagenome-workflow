@@ -14,43 +14,49 @@ set -euo pipefail
 set -x
 
 # ============================================================================
-# Dorado Demultiplexing and BAM to FASTQ Conversion
+# Dorado Demultiplexing to FASTQ
 # ============================================================================
-# Description: Demultiplex basecalled BAM and convert to gzipped FASTQ files
-# Input: Basecalled BAM file (single file or directory)
-# Output: Per-barcode BAM files and gzipped FASTQ files
+# Description: Demultiplex basecalled BAM to per-barcode FASTQ files
+# Input: Basecalled BAM file
+# Output: Per-barcode FASTQ files (gzipped)
+#
+# IMPORTANT: Choose ONE of the two approaches below:
+# 1. --no-classify: Use if BAM has existing barcode tags (BC:Z:)
+# 2. --kit-name: Use to re-classify barcodes from scratch
 # ============================================================================
 
-# Load required modules
-module load samtools/1.19
 module load parallel
 module load cuda/12.8.0
-nvidia-smi || true
 
-# Paths to dorado binaries and environment setup
 doradoBase="<DORADO_INSTALLATION_PATH>"
 export LD_LIBRARY_PATH="${doradoBase}/lib:$LD_LIBRARY_PATH"
 doradoBin="${doradoBase}/bin/dorado"
 
-# Input BAM file (already basecalled and trimmed)
 inputBAM="<INPUT_BAM_PATH>"
-demuxDir="<OUTPUT_DEMUX_BAM_DIR>"
 fastqDir="<OUTPUT_FASTQ_DIR>"
+barcodeKit="<BARCODE_KIT>"  # Only needed for Approach 2
 
-# Create output directories
-mkdir -p "$demuxDir"
 mkdir -p "$fastqDir"
 
 echo "Starting dorado demux..."
+
+# ===== APPROACH 1: Use existing barcode tags (RECOMMENDED) =====
+# Uncomment this if your BAM already has BC:Z: tags from basecalling
 "$doradoBin" demux \
-  --output-dir "$demuxDir" \
+  --output-dir "$fastqDir" \
   --no-classify \
   --emit-fastq \
   "$inputBAM"
 
-echo "Demux complete. Converting BAM to gzipped FASTQ..."
+# ===== APPROACH 2: Re-classify barcodes from scratch =====
+# Uncomment this if barcode tags are missing or incorrect
+# "$doradoBin" demux \
+#   --kit-name "$barcodeKit" \
+#   --output-dir "$fastqDir" \
+#   --emit-fastq \
+#   "$inputBAM"
 
-# Convert each barcode BAM in output to gzipped FASTQ
-find "$demuxDir" -name "*.bam" | parallel -j 12 "samtools fastq -@ 1 -n {} | gzip -c > $fastqDir/{/.}.fastq.gz"
+echo "Compressing FASTQ files..."
+find "$fastqDir" -name "*.fastq" -type f | parallel -j 12 "gzip {}"
 
-echo "All processes complete. FASTQ files are in $fastqDir"
+echo "Complete! Gzipped FASTQ files are in $fastqDir"

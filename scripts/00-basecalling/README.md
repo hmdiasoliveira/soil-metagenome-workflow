@@ -227,6 +227,75 @@ Specify exactly as shown in Dorado's `--kit-name` option.
 3. Submit resume job
 4. Repeat if necessary
 
+### Nested Directories from Demux
+
+After running `run_dorado_demux.sh`, you get nested directories instead of per-barcode files:
+```
+demux_BAM/
+├── Batch3_I/
+│   └── 20251029_0909_0_PBE46605_ba040519/
+│       └── fastq_pass/
+│           └── PBE46605_pass_ba040519_00000000_0.fastq
+```
+
+Instead of the expected:
+```
+demux_BAM/
+├── barcode01.fastq
+├── barcode02.fastq
+...
+```
+
+### Cause
+
+This happens when:
+1. You merged multiple BAM files from different sequencing runs
+2. The BAM has complex read group (RG) structure
+3. Dorado demux organizes by run metadata instead of just barcodes
+
+### Solution: Use `split_barcoded_bam.sh`
+
+This script uses `samtools split` instead of `dorado demux`:
+```bash
+# Edit script to set paths
+nano split_barcoded_bam.sh
+
+# Set paths:
+# - inputBAM: Your merged barcoded BAM file
+# - tempBAMDir: Temporary directory for intermediate BAM files
+# - fastqDir: Final output directory for FASTQ files
+
+# Submit job
+qsub split_barcoded_bam.sh
+```
+
+**What it does:**
+1. Splits BAM by read groups using `samtools split`
+2. Extracts barcode numbers from RG headers
+3. Converts each barcode's BAM to FASTQ
+4. Merges duplicate barcodes if multiple RGs have same barcode
+5. Produces clean per-barcode FASTQ.gz files
+
+**Output:**
+```
+fastqDir/
+├── barcode01.fastq.gz
+├── barcode02.fastq.gz
+├── barcode03.fastq.gz
+...
+├── barcode96.fastq.gz
+└── unclassified.fastq.gz
+```
+
+### When to Use Each Script
+
+| Script | Use When | Output |
+|--------|----------|--------|
+| `run_dorado_demux.sh` | Single run, straightforward demux | Per-barcode files |
+| `split_barcoded_bam.sh` | Merged runs, complex RG structure | Per-barcode files |
+
+**Recommendation**: If `run_dorado_demux.sh` produces nested directories, use `split_barcoded_bam.sh` instead.
+
 ---
 
 ### CUDA Out of Memory
