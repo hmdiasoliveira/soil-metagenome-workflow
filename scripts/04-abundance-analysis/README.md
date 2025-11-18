@@ -201,23 +201,6 @@ python annotate_contigs.py
 
 ---
 
-## Expected Results
-
-### Mapping Statistics
-- **Mapping rate**: 70-95% (depends on assembly completeness)
-- **High-quality mappings (MAPQ ≥ 60)**: 50-80%
-
-### Differential Abundance
-- **Significant contigs (FDR < 0.05)**: 10-100 (depends on treatment effect)
-- **Typical log fold changes**: 0.5-3.0
-
-### Taxonomy
-- **Phyla**: Typically 5-15 major phyla
-- **Most abundant**: Proteobacteria, Bacteroidota, Actinobacteriota
-- **Plant-derived contigs**: 1-10% (if plant genomes included)
-
----
-
 ## Troubleshooting
 
 ### Low Mapping Rate
