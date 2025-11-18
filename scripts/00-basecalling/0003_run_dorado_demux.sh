@@ -25,8 +25,11 @@ set -x
 # 2. --kit-name: Use to re-classify barcodes from scratch
 # ============================================================================
 
+# Load required modules
+module load samtools/1.19
 module load parallel
 module load cuda/12.8.0
+nvidia-smi || true
 
 doradoBase="<DORADO_INSTALLATION_PATH>"
 export LD_LIBRARY_PATH="${doradoBase}/lib:$LD_LIBRARY_PATH"
@@ -41,6 +44,7 @@ mkdir -p "$fastqDir"
 echo "Starting dorado demux..."
 
 # ===== APPROACH 1: Use existing barcode tags (RECOMMENDED) =====
+# (already basecalled and trimmed)
 # Uncomment this if your BAM already has BC:Z: tags from basecalling
 "$doradoBin" demux \
   --output-dir "$fastqDir" \
@@ -57,6 +61,6 @@ echo "Starting dorado demux..."
 #   "$inputBAM"
 
 echo "Compressing FASTQ files..."
-find "$fastqDir" -name "*.fastq" -type f | parallel -j 12 "gzip {}"
+find "$fastqDir" -name "*.fastq" -type f | parallel -j 12 'gzip {}'
 
 echo "Complete! Gzipped FASTQ files are in $fastqDir"
