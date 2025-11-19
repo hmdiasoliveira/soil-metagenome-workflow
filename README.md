@@ -54,18 +54,7 @@ cd soil-metagenome-workflow
 # Create conda environment
 conda env create -f environment.yml
 conda activate soil-meta
-
-# Or use Snakemake workflow
-snakemake --use-conda --cores 16
 ```
-
-## Documentation
-
-- [Experimental Design](docs/01-experimental-design.md)
-- [Data Processing](docs/02-data-processing.md)
-- [Assembly Workflow](docs/03-assembly-workflow.md)
-- [Differential Abundance Analysis](docs/04-differential-abundance.md)
-- [Results Interpretation](docs/05-interpretation-guide.md)
 
 ## Key Results
 
