@@ -302,4 +302,4 @@ abs(logFC) >= 0    # Any change
 
 - edgeR: https://bioconductor.org/packages/edgeR/
 - minimap2: https://github.com/lh3/minimap2
-- Permutation FDR: Storey & Tibshirani (2003) PNAS
+- Permutation FDR: https://doi.org/10.1093/bioinformatics/bti685
