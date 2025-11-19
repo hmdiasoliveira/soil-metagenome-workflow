@@ -1,0 +1,63 @@
+# ============================================================================
+# Raw FASTQ Data Sources Configuration
+# ============================================================================
+# Organization of all raw sequencing data locations and metadata
+# ============================================================================
+
+project_info:
+  combined_study: "Soil Microbiome Metagenomics 2025"
+  investigators:
+    - Alek Meade
+    - Viraj Kolhapuri
+    - Saige Waugh
+  description: "Combined analysis of plant-associated microbiomes across multiple datasets"
+
+# ============================================================================
+# Dataset 1: Alek CSIRO 2019
+# ============================================================================
+alek_csiro_2019:
+  investigator: "Alek Meade"
+  description: "CSIRO plant samples - 2019 collection"
+  
+  location:
+    base_dir: "/g/data/xe2/adria/alek_CSIRO/FASTQ_filtered/fastq_dorado_v1.1.0_filtered_min_mean_q_90/CSIRO2019_fastq"
+
+# ============================================================================
+# Dataset 2: Alek CSIRO 2023
+# ============================================================================
+alek_csiro_2023:
+  investigator: "Alek Meade"
+  description: "CSIRO plant samples - 2023 collection"
+  
+  location:
+    base_dir: "/g/data/xe2/adria/alek_CSIRO/FASTQ_filtered/fastq_dorado_v1.1.0_filtered_min_mean_q_90/CSIRO2023_fastq"
+
+# ============================================================================
+# Dataset 3: Viraj PlantFX1 (July 2025)
+# ============================================================================
+viraj_plantfx1:
+  investigator: "Viraj Kolhapuri"
+  description: "Plant microbiome samples - First sequencing run"
+  
+  location:
+    base_dir: "/g/data/xe2/adria/Viraj_2025/Viraj_plantfx1_072025/trimmed_demultiplexed_FASTQ"
+
+# ============================================================================
+# Dataset 4: Viraj PlantFX2 (August 2025)
+# ============================================================================
+viraj_plantfx2:
+  investigator: "Viraj Kolhapuri"
+  description: "Plant microbiome samples - Second sequencing run"
+  
+  location:
+    base_dir: "/g/data/xe2/adria/Viraj_2025/Viraj_plantfx2_082025/fastq_raw/"
+
+# ============================================================================
+# Dataset 5: Saige Soil (September 2025)
+# ============================================================================
+saige_soil:
+  investigator: "Saige Waugh"
+  description: "Soil microbiome samples"
+  
+  location:
+    base_dir: "/g/data/xe2/adria/Saige_2025/sw_soil01_25/fastq_raw"

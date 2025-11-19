@@ -1,0 +1,32 @@
+# Reference Genomes Configuration
+# Paths to host and contaminant genomes for competitive mapping
+
+host_genomes:
+  wheat:
+    name: "Triticum aestivum"
+    fasta: "/g/data/xe2/adria/Plant_database/wheat/GCF_018294505.1_IWGSC_CS_RefSeq_v2.1_genomic.fna.gz"
+    
+  barley:
+    name: "Hordeum vulgare"
+    fasta: "/g/data/xe2/adria/Plant_database/barley/GCF_904849725.1_MorexV3_pseudomolecules_assembly_genomic.fna.gz"
+    
+  canola:
+    name: "Brassica napus"
+    fasta: "/g/data/xe2/adria/Plant_database/canola/GCF_020379485.1_Da-Ae_genomic.fna.gz"
+    
+  chickpea:
+    name: "Cicer arietinum"
+    fasta: "/g/data/xe2/adria/Plant_database/chickpea/GCF_000331145.2_Cicar.CDCFrontier_v2.0_genomic.fna.gz"
+    
+  medicago:
+    name: "Medicago truncatula"
+    fasta: "/g/data/xe2/adria/Plant_database/medicago/GCF_003473485.1_MtrunA17r5.0-ANR_genomic.fna.gz"
+    
+  eucalyptus:
+    name: "Eucalyptus regnans"
+    fasta: "/g/data/xe2/references/eucalyptus/scott-final-2020/E_regnans.fasta"
+
+# SMAG reference database
+smag_database:
+  fasta: "/g/data/xe2/adria/SMAG_database/SMAG_drep_21077/"
+  taxonomy: "/g/data/xe2/adria/SMAG_database/SMAGs_Supplementary_Data.xlsx"
