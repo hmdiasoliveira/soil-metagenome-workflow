@@ -59,8 +59,7 @@ for fq_file in "$LOCAL_INPUT"/*.f*q*; do
     echo "Processing $sample..."
     
     # Check if file contains reads
-    if gzip -dc "$fq_file" 2>/dev/null | grep -m 1 -q '^@' || \
-       cat "$fq_file" 2>/dev/null | grep -m 1 -q '^@'; then
+    if gzip -dc "$fq_file" 2>/dev/null | grep -q '^@'; then
         
         # Create sample-specific output directory
         nanoplot_sample_dir="${LOCAL_NANOPLOT}/nanoplot_${sample}"

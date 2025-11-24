@@ -58,10 +58,10 @@ for input_file in "$INPUT_DIR"/*.fastq.gz "$INPUT_DIR"/*.fq.gz; do
     # Run Chopper with original options
     chopper \
         --input "$input_file" \
-        --output "$output_file" \
         --quality "$MIN_QUALITY" \
         --minlength "$MIN_LENGTH" \
-        --threads "$NTHREADS"
+        --threads "$NTHREADS" \
+        | gzip > "$output_file"
     
     # Report filtering statistics
     input_reads=$(zcat "$input_file" | awk 'NR%4==1' | wc -l)
