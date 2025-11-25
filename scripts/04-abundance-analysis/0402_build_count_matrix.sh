@@ -21,6 +21,7 @@ set -x
 
 # Load samtools
 module load samtools
+module load R
 
 # Input/Output paths
 BAM_DIR="<INPUT_BAM_DIR>"
