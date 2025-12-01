@@ -11,6 +11,8 @@ This repository contains the complete bioinformatic pipeline used in:
 > Abundance Analysis Across Plant Shoot Biomass Gradients. *Master's Thesis*, 
 > Australian National University.
 
+**📄 [Read the full thesis (PDF)](https://github.com/AdriaWu/soil-metagenome-workflow/blob/main/docs/HeyueWu_masters_thesis.pdf)**
+
 ### Key Features
 
 - **High-contiguity assembly** using nanoMDBG optimized for ONT R10 data
@@ -65,6 +67,8 @@ conda activate soil-meta
 - **194 differentially abundant contigs** across biomass gradient
 
 ## Citation
+
+**📄 [Download full thesis (PDF)](https://github.com/AdriaWu/soil-metagenome-workflow/blob/main/docs/HeyueWu_masters_thesis.pdf)**
 
 If you use this workflow, please cite:
 ```bibtex
