@@ -46,6 +46,8 @@ echo "Starting dorado demux..."
 # ===== APPROACH 1: Use existing barcode tags (RECOMMENDED) =====
 # (already basecalled and trimmed)
 # Uncomment this if your BAM already has BC:Z: tags from basecalling
+# Delete --emit-fastq if you only want BAM output with specific tags
+
 "$doradoBin" demux \
   --output-dir "$fastqDir" \
   --no-classify \

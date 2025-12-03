@@ -45,6 +45,7 @@ barcodeKit="<BARCODE_KIT>"
 "$doradoBin" basecaller "$modelCfg" "$InputDir" \
     --device cuda:all \
     --kit-name "$barcodeKit" \
+    --modified-bases 5mCG_5hmCG \
     --trim all \
     --recursive \
     > "$OutputBam"
