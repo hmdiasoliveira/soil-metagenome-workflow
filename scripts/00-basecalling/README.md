@@ -9,6 +9,112 @@ PBS scripts for Oxford Nanopore basecalling using Dorado on GPU nodes.
 - Access to NCI GPU queues (`gpuvolta` or `dgxa100`)
 - Modules: `cuda`, `samtools`, `parallel`
 
+---
+
+## Workflow Overview
+
+### For Single Run
+```
+[0] (Recommended) Download Dorado model(s) once → persistent model directory
+    ↓
+POD5 files (single run)
+    ↓
+[2] run_dorado_basecaller.sh → Basecalled BAM (all barcodes)
+    ↓
+[4] run_dorado_demux.sh → Per-barcode FASTQ.gz files
+```
+
+*(If basecalling times out or fails, use Step 3: `resume_dorado_basecaller.sh`.)*
+
+### For Multiple Runs (Recommended)
+```
+[0] (Recommended) Download Dorado model(s) once → persistent model directory
+    ↓
+POD5 files (multiple runs mixed)
+    ↓
+[1] Organize by run ID → Separate directories per run
+    ↓
+[2] run_dorado_basecaller.sh → One BAM per run
+    ↓
+[4] run_dorado_demux.sh → Per-barcode FASTQ per run
+    ↓
+[5] Merge same barcodes across runs (optional)
+```
+
+---
+
+## Configuration
+
+Before running, edit each script to replace placeholders.
+
+### Common Placeholders
+
+- `<PROJECT>`: Your NCI project code (e.g., `xe2`)
+- `<DORADO_INSTALLATION_PATH>`: Path to Dorado installation directory
+  - Example: `/g/data/xe2/adria/apps/dorado-1.1.0-linux-x64`
+
+**Model download / storage**
+- `<DORADO_MODEL_DIR>`: Directory where you want to store Dorado models (persistent location recommended)
+  - Example: `/g/data/xe2/adria/apps/dorado_persistent_models`
+- `<DORADO_MODEL_NAME>`: Dorado model identifier (the exact string used by `dorado download --model`)
+  - Example: `dna_r10.4.1_e8.2_400bps_sup@v5.2.0`
+
+**If your basecalling scripts use a model *path* (rather than a model name):**
+- `<DORADO_MODEL_PATH>`: Path to the downloaded model directory
+  - Example: `<DORADO_MODEL_DIR>/<DORADO_MODEL_NAME>`
+  - (After running the download script, Dorado will create a subdirectory under `<DORADO_MODEL_DIR>` matching the model name.)
+
+- `<BARCODE_KIT>`: Barcoding kit used for library preparation
+  - Example: `SQK-NBD114-96` (96-sample barcoding kit)
+
+### Script-Specific Placeholders
+
+**dorado_model_download.sh**:
+- `<DORADO_INSTALLATION_PATH>`
+- `<DORADO_MODEL_DIR>`
+- `<DORADO_MODEL_NAME>`
+
+**run_dorado_basecaller.sh**:
+- `<INPUT_POD5_DIR>`: Directory containing POD5 files
+- `<OUTPUT_BAM_DIR>`: Directory for output BAM file
+
+**resume_dorado_basecaller.sh**:
+- `<INPUT_POD5_DIR>`: Directory containing POD5 files (same as original run)
+- `<OUTPUT_BAM_DIR>`: Directory for output BAM file
+- `<INCOMPLETE_BAM_PATH>`: Path to incomplete BAM from failed run
+- `<RESUMED_BAM_OUTPUT_PATH>`: Path for new, completed BAM file
+
+**run_dorado_demux.sh**:
+- `<INPUT_BAM_PATH>`: Path to basecalled BAM file (or directory)
+- `<OUTPUT_DEMUX_BAM_DIR>`: Directory for per-barcode BAM files
+- `<OUTPUT_FASTQ_DIR>`: Directory for per-barcode FASTQ files
+
+---
+
+## Step 0: Download Dorado Model(s) (Recommended)
+
+Download the model once into a persistent directory (e.g., `gdata`) so basecalling jobs don’t re-download models and can start faster.
+
+```bash
+# Edit script to set paths
+nano dorado_model_download.sh
+
+# Run download (no GPU required)
+bash dorado_model_download.sh
+
+# Check models were downloaded
+ls -lh <DORADO_MODEL_DIR>
+```
+
+**Notes**:
+- If downloads fail due to network restrictions on your system, download the model on a machine with internet access and copy the model directory into `<DORADO_MODEL_DIR>`.
+- If your basecalling scripts support it, you can also export the models directory so Dorado can find models automatically:
+  ```bash
+  export DORADO_MODELS_DIRECTORY="<DORADO_MODEL_DIR>"
+  ```
+
+---
+
 ## Important: Organizing Multiple Sequencing Runs
 
 ### Best Practice: Process Each Run Separately
@@ -26,7 +132,7 @@ PBE46605_skip_c8f27651_3dbe505c_0.pod5    # Run 3
 
 The format is: `<flowcell>_<mode>_<run_id>_<unique_id>_<number>.pod5`
 
-## Step 0: Organize POD5 Files by Run
+## Step 1: Organize POD5 Files by Run
 ```bash
 #!/bin/bash
 # Organize POD5 files into run-specific directories
@@ -41,11 +147,11 @@ cd "$SOURCE_DIR"
 for pod5 in *.pod5; do
     # Extract run ID (third underscore-separated field)
     run_id=$(echo "$pod5" | cut -d'_' -f3)
-    
+
     # Create directory for this run
     run_dir="$OUTPUT_BASE/run_${run_id}"
     mkdir -p "$run_dir"
-    
+
     # Move or copy file
     mv "$pod5" "$run_dir/"  # Use 'cp' if you want to keep originals
 done
@@ -71,67 +177,7 @@ organized/
 
 ---
 
-## Workflow Overview
-
-### For Single Run
-```
-POD5 files (single run)
-    ↓
-[1] run_dorado_basecaller.sh → Basecalled BAM (all barcodes)
-    ↓
-[2] run_dorado_demux.sh → Per-barcode FASTQ.gz files
-```
-
-### For Multiple Runs (Recommended)
-```
-POD5 files (multiple runs mixed)
-    ↓
-[0] Organize by run ID → Separate directories per run
-    ↓
-[1] run_dorado_basecaller.sh → One BAM per run
-    ↓
-[2] run_dorado_demux.sh → Per-barcode FASTQ per run
-    ↓
-[3] Merge same barcodes across runs (optional)
-```
-
-
----
-
-## Configuration
-
-Before running, edit each script to replace placeholders:
-
-### Common Placeholders
-
-- `<PROJECT>`: Your NCI project code (e.g., `xe2`)
-- `<DORADO_INSTALLATION_PATH>`: Path to Dorado installation directory
-  - Example: `/g/data/xe2/adria/apps/dorado-1.1.0-linux-x64`
-- `<DORADO_MODEL_PATH>`: Path to Dorado model directory
-  - Example: `/g/data/xe2/adria/apps/dorado_persistent_models/dna_r10.4.1_e8.2_400bps_sup@v5.2.0`
-- `<BARCODE_KIT>`: Barcoding kit used for library preparation
-  - Example: `SQK-NBD114-96` (96-sample barcoding kit)
-
-### Script-Specific Placeholders
-
-**run_dorado_basecaller.sh**:
-- `<INPUT_POD5_DIR>`: Directory containing POD5 files
-- `<OUTPUT_BAM_DIR>`: Directory for output BAM file
-
-**resume_dorado_basecaller.sh**:
-- `<INPUT_POD5_DIR>`: Directory containing POD5 files (same as original run)
-- `<OUTPUT_BAM_DIR>`: Directory for output BAM file
-- `<INCOMPLETE_BAM_PATH>`: Path to incomplete BAM from failed run
-- `<RESUMED_BAM_OUTPUT_PATH>`: Path for new, completed BAM file
-
-**run_dorado_demux.sh**:
-- `<INPUT_BAM_PATH>`: Path to basecalled BAM file (or directory)
-- `<OUTPUT_DEMUX_BAM_DIR>`: Directory for per-barcode BAM files
-- `<OUTPUT_FASTQ_DIR>`: Directory for per-barcode FASTQ files
-
----
-
-## Step 1: Initial Basecalling
+## Step 2: Initial Basecalling
 
 Basecall POD5 files with inline demultiplexing and adapter trimming.
 ```bash
@@ -157,7 +203,7 @@ qsub run_dorado_basecaller.sh
 
 ---
 
-## Step 2: Resume Incomplete Basecalling (If Needed)
+## Step 3: Resume Incomplete Basecalling (If Needed)
 
 If basecalling job timed out or failed, resume from the incomplete BAM.
 ```bash
@@ -182,7 +228,7 @@ qsub resume_dorado_basecaller.sh
 
 ---
 
-## Step 3: Demultiplexing and FASTQ Conversion
+## Step 4: Demultiplexing and FASTQ Conversion
 
 Separate barcodes into individual files and convert BAM to FASTQ.
 ```bash
@@ -198,7 +244,7 @@ nano run_dorado_demux.sh
 qsub run_dorado_demux.sh
 ```
 
-**Output**: 
+**Output**:
 - `<OUTPUT_DEMUX_BAM_DIR>/barcode*.bam` (one per barcode)
 - `<OUTPUT_FASTQ_DIR>/barcode*.fastq.gz` (one per barcode)
 
@@ -252,7 +298,7 @@ qsub run_dorado_demux.sh
 | Walltime    | 20 hours  | Usually completes faster             |
 | Jobfs       | 100 GB    | Minimal temporary storage            |
 
-**Notes**: 
+**Notes**:
 - Demux step is CPU-bound, not GPU-bound
 - Can alternatively run on normal queue without GPU
 
@@ -276,7 +322,7 @@ Specify exactly as shown in Dorado's `--kit-name` option.
 
 ## Model Selection
 
-### Recommended Models (R10.4.1 chemistry)
+### Common (Simplex) Models (R10.4.1 chemistry)
 
 | Model                                      | Accuracy | Speed     | Use Case              |
 |--------------------------------------------|----------|-----------|-----------------------|
@@ -285,6 +331,13 @@ Specify exactly as shown in Dorado's `--kit-name` option.
 | dna_r10.4.1_e8.2_400bps_fast@v5.2.0       | Moderate | Fast      | Quick QC              |
 
 **sup** (super-accurate) is recommended for metagenomics to minimize assembly errors.
+
+### Modified-Basecalling Models (Examples)
+
+These are model identifiers you can use directly with `dorado_model_download.sh`:
+
+- `dna_r10.4.1_e8.2_400bps_hac@v5.2.0_6mA@v1`
+- `dna_r10.4.1_e8.2_400bps_sup@v5.2.0_5mCG_5hmCG@v2`
 
 ---
 
@@ -322,7 +375,7 @@ Specify exactly as shown in Dorado's `--kit-name` option.
 - Reads not barcoded (check library prep)
 - Barcodes removed by `--trim all` but not demuxed
 
-**Solution**: 
+**Solution**:
 - Verify barcode kit matches library prep
 - Check basecalling log for demux statistics
 - Re-run basecalling if wrong kit was used
@@ -335,9 +388,10 @@ Specify exactly as shown in Dorado's `--kit-name` option.
 
 **Optimization**:
 1. Use A100 GPUs (`dgxa100` queue) instead of V100
-2. Ensure model is pre-downloaded (set `DORADO_MODELS_DIRECTORY`)
-3. Check POD5 file integrity
-4. Increase `--chunk-size` if enough GPU memory
+2. Pre-download the model into a persistent directory using `dorado_model_download.sh`
+3. Ensure Dorado can find the downloaded model (e.g., `export DORADO_MODELS_DIRECTORY=<DORADO_MODEL_DIR>`)
+4. Check POD5 file integrity
+5. Increase `--chunk-size` if enough GPU memory
 
 ---
 
@@ -386,6 +440,9 @@ done
 
 After basecalling and demultiplexing, proceed to quality control:
 ```bash
+# 0. (Recommended) Download Dorado model(s) once
+bash scripts/00-basecalling/dorado_model_download.sh
+
 # 1. Complete basecalling workflow
 qsub scripts/00-basecalling/run_dorado_basecaller.sh
 qsub scripts/00-basecalling/run_dorado_demux.sh
@@ -404,7 +461,11 @@ qsub scripts/01-quality-control/filter_chopper.sh
 
 ## Example: Complete Basecalling Workflow
 ```bash
-# Step 1: Initial basecalling (48 hours on V100)
+# Step 0: Download model(s) once
+bash dorado_model_download.sh
+
+# Step 2: Initial basecalling (48 hours on V100)
+# (Skip Step 1 if your POD5 are already in a single-run directory)
 qsub run_dorado_basecaller.sh
 
 # Check job status
@@ -413,13 +474,13 @@ qstat -u $USER
 # If job completes successfully:
 ls <OUTPUT_BAM_DIR>/*.bam
 
-# Step 2: Demultiplex (4-8 hours)
+# Step 4: Demultiplex (4-8 hours)
 qsub run_dorado_demux.sh
 
 # Verify outputs
 ls <OUTPUT_FASTQ_DIR>/*.fastq.gz | wc -l  # Should match number of barcodes used
 
-# Step 3: Proceed to quality control
+# Proceed to quality control
 cd ../01-quality-control
 ```
 
