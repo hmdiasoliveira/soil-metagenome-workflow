@@ -28,9 +28,19 @@ doradoBase="<DORADO_INSTALLATION_PATH>"
 export LD_LIBRARY_PATH="${doradoBase}/lib:$LD_LIBRARY_PATH"
 doradoBin="${doradoBase}/bin/dorado"
 
-# Pinned model (directory form)
-modelCfg="<DORADO_MODEL_PATH>"
-export DORADO_MODELS_DIRECTORY="$(dirname "$modelCfg")"   # skip re-download
+# Model configuration (LOCAL ONLY; no downloading in PBS job)
+
+# Directory where all Dorado models are stored locally (downloaded beforehand)
+modelsDir="<DORADO_MODEL_DIR>"
+
+# Simplex model directory (basecalling A/C/G/T)
+simplexModelPath="<DORADO_SIMPLEX_MODEL_PATH>"
+
+# Modification model directory (e.g., 5mCG_5hmCG compatible with the simplex model)
+modModelPath="<DORADO_MOD_MODEL_PATH>"
+
+# Make Dorado look here for models (prevents auto-download attempts)
+export DORADO_MODELS_DIRECTORY="$modelsDir"
 
 # I/O paths
 InputDir="<INPUT_POD5_DIR>"
@@ -41,13 +51,15 @@ OutputBam="${OutputDir}/$(basename "$InputDir")_trimmed.bam"
 
 barcodeKit="<BARCODE_KIT>"
 
-# Base-calling-
-"$doradoBin" basecaller "$modelCfg" "$InputDir" \
-    --device cuda:all \
-    --kit-name "$barcodeKit" \
-    --modified-bases 5mCG_5hmCG \
-    --trim all \
-    --recursive \
-    > "$OutputBam"
+# Base-calling (simplex + explicit modified-base model path)
+
+"$doradoBin" basecaller "$simplexModelPath" "$InputDir" \
+  --models-directory "$modelsDir" \
+  --modified-bases-models "$modModelPath" \
+  --device cuda:all \
+  --kit-name "$barcodeKit" \
+  --trim all \
+  --recursive \
+  > "$OutputBam"
 
 echo "Job completed successfully at $(date)"
