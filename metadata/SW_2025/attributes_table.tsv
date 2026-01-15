@@ -1,0 +1,26 @@
+sample_name	sample_title	bioproject_accession	organism	host	isolation_source	collection_date	geo_loc_name	lat_lon	ref_biomaterial	rel_to_oxygen	samp_collect_device	samp_mat_process	samp_size	source_material_id	description	soil_source	plant_status	amendment	replicate	barcode
+ACT_SOIL_KOWEN_NOPLANT_BIOFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	noplant	biofertiliser	1	22
+ACT_SOIL_KOWEN_NOPLANT_WATER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	noplant	water	1	23
+ACT_SOIL_KOWEN_PLANT_BIOFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	biofertiliser	1	14
+ACT_SOIL_KOWEN_PLANT_BIOFERTILISER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	biofertiliser	2	15
+ACT_SOIL_KOWEN_PLANT_BIOFERTILISER_R03			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	biofertiliser	3	16
+ACT_SOIL_KOWEN_PLANT_CHEMFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	chemfertiliser	1	17
+ACT_SOIL_KOWEN_PLANT_CHEMFERTILISER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	chemfertiliser	2	18
+ACT_SOIL_KOWEN_PLANT_WATER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	water	1	19
+ACT_SOIL_KOWEN_PLANT_WATER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	plant	water	2	20
+ACT_SOIL_KOWEN_UNGERM_BIOFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	ungerminated	biofertiliser	1	12
+ACT_SOIL_KOWEN_UNGERM_BIOFERTILISER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								kowen_forest	ungerminated	biofertiliser	2	13
+ACT_SOIL_RIVER_NOPLANT_BIOFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	noplant	biofertiliser	1	NA
+ACT_SOIL_RIVER_NOPLANT_WATER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	noplant	water	1	NA
+ACT_SOIL_RIVER_PLANT_BIOFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	biofertiliser	1	1
+ACT_SOIL_RIVER_PLANT_BIOFERTILISER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	biofertiliser	2	2
+ACT_SOIL_RIVER_PLANT_BIOFERTILISER_R03			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	biofertiliser	3	3
+ACT_SOIL_RIVER_PLANT_CHEMFERTILISER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	chemfertiliser	1	4
+ACT_SOIL_RIVER_PLANT_CHEMFERTILISER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	chemfertiliser	2	5
+ACT_SOIL_RIVER_PLANT_CHEMFERTILISER_R03			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	chemfertiliser	3	6
+ACT_SOIL_RIVER_PLANT_WATER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	water	1	9
+ACT_SOIL_RIVER_PLANT_WATER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	water	2	10
+ACT_SOIL_RIVER_PLANT_WATER_R03			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	plant	water	3	11
+ACT_SOIL_RIVER_UNGERM_WATER_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	ungerminated	water	1	7
+ACT_SOIL_RIVER_UNGERM_WATER_R02			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								riverbed	ungerminated	water	2	8
+ACT_SOIL_BIOFERTILISER_ONLY_R01			soil metagenome	environmental soil		2025-09	Australia: Australian Capital Territory, Canberra	not collected								NA	NA	biofertiliser	1	21
