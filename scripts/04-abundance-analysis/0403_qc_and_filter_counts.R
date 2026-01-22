@@ -29,7 +29,7 @@ output_dir <- "<OUTPUT_DIR>"                     # e.g., "output/qc_filtering"
 
 # Filtering parameters
 cutoff <- <MIN_LIBRARY_SIZE>                     # e.g., 10000 (minimum total counts per sample)
-min_samples <- <MIN_PREVALENCE>                  # e.g., 3 (minimum samples a contig must appear in)
+min_samples <- <MIN_PREVALENCE>                  # e.g., 3 (minimum samples a contig must appear in), 0.05 * nrow(count_matrix)
 min_total_reads <- <MIN_TOTAL_READS>             # e.g., 100 (minimum total reads for a contig)
 
 # Create output directories
