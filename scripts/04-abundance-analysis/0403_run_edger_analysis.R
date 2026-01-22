@@ -20,6 +20,7 @@ dir.create(output_dir, recursive = TRUE)
 cat("Loading count matrix and metadata...\n")
 
 # Load count matrix (contigs × samples)
+# Rows are contigs, columns are samples
 count_matrix <- read.csv(count_matrix_file, row.names = 1)
 
 # Load metadata
