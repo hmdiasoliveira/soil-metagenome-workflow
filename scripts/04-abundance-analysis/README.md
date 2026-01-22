@@ -17,11 +17,13 @@ Assembled contigs + Filtered reads
     ↓
 [2] build_count_matrix.sh → Count matrix (samples × contigs)
     ↓
-[3] run_edger_analysis.R → Differential abundance results
+[3] qc_and_filter_counts.R → QC plots + Filtered count matrix
     ↓
-[4] empirical_fdr_calibration.R → Calibrated p-value thresholds
+[4] run_edger_analysis.R → Differential abundance results
     ↓
-[5] annotate_contigs.py → Taxonomic annotation
+[5] empirical_fdr_calibration.R → Calibrated p-value thresholds
+    ↓
+[6] annotate_contigs.py → Taxonomic annotation
 ```
 
 ---
@@ -37,6 +39,9 @@ Replace placeholders in scripts:
 - `<OUTPUT_BAM_DIR>`: Directory for BAM files
 - `<INPUT_METADATA_CSV>`: Sample metadata (barcode, treatment, etc.)
 - `<SMAG_TAXONOMY_CSV>`: SMAG taxonomy database
+- `<MIN_LIBRARY_SIZE>`: Minimum library size cutoff (e.g., 10000)
+- `<MIN_PREVALENCE>`: Minimum samples a contig must appear in (e.g., 3)
+- `<MIN_TOTAL_READS>`: Minimum total reads for a contig (e.g., 100)
 
 ---
 
@@ -95,7 +100,55 @@ qsub build_count_matrix.sh
 
 ---
 
-## Step 3: Differential Abundance Analysis
+## Step 3: QC and Filter Count Matrix
+
+Clean sample names, perform quality control, and filter low-quality samples and contigs.
+```bash
+# Edit script
+nano qc_and_filter_counts.R
+
+# Set paths:
+# count_matrix_file: Output from step 2
+# metadata_file: Sample metadata
+# output_dir: Directory for QC plots and filtered outputs
+
+# Key parameters:
+# cutoff: Minimum library size (total counts per sample)
+# min_samples: Minimum number of samples a contig must appear in
+# min_total_reads: Minimum total reads for a contig across all samples
+
+# Run
+Rscript qc_and_filter_counts.R
+```
+
+**Outputs**:
+1. **QC Plots** (in `<OUTPUT_DIR>/plots/`):
+   - `library_size_distribution.png`: Distribution of total counts per sample
+   - `contig_prevalence_distribution.png`: Distribution of contig prevalence
+   - `contig_abundance_distribution.png`: Distribution of total counts per contig
+
+2. **Filtered Data**:
+   - `count_matrix_filtered.csv`: Filtered count matrix (samples × contigs)
+   - `metadata_filtered.csv`: Metadata for retained samples
+
+3. **Console Output**:
+   - Summary statistics before and after filtering
+   - Number of samples and contigs retained
+
+**Filtering Strategy**:
+1. **Sample filtering**: Remove samples with library size < cutoff
+2. **Contig filtering**: Keep contigs that meet EITHER:
+   - Present in ≥ min_samples samples, OR
+   - Total reads ≥ min_total_reads across all samples
+
+**Name Cleaning**:
+- Standardizes sample names to format: `{ID}_{condition}_{rep1}_{rep2}`
+- Ensures consistency between metadata and count matrix
+- Matches samples between both files
+
+---
+
+## Step 4: Differential Abundance Analysis
 
 Identify differentially abundant contigs using edgeR.
 ```bash
@@ -122,7 +175,7 @@ Rscript run_edger_analysis.R
 
 ---
 
-## Step 4: Empirical FDR Calibration
+## Step 5: Empirical FDR Calibration
 
 Calibrate FDR thresholds using permutation testing and generate comprehensive visualizations.
 ```bash
@@ -173,7 +226,7 @@ Rscript empirical_fdr_calibration.R
 
 ---
 
-## Step 5: Annotate Contigs
+## Step 6: Annotate Contigs
 
 Assign taxonomy to contigs based on MAG mapping.
 ```bash
@@ -255,11 +308,12 @@ After abundance analysis:
 # Abundance complete
 qsub scripts/04-abundance-analysis/map_reads_to_assembly.sh
 qsub scripts/04-abundance-analysis/build_count_matrix.sh
+Rscript scripts/04-abundance-analysis/qc_and_filter_counts.R
 Rscript scripts/04-abundance-analysis/run_edger_analysis.R
 Rscript scripts/04-abundance-analysis/empirical_fdr_calibration.R
 python scripts/04-abundance-analysis/annotate_contigs.py
 
-# Next: Binning and functional annotation
+# Next: Binning and functional annotation (optional)
 cd ../05-binning
 # Or: Functional analysis of DA contigs
 cd ../06-functional-annotation
@@ -268,6 +322,24 @@ cd ../06-functional-annotation
 ---
 
 ## Parameter Tuning
+
+### Library Size Cutoff
+
+It depends on the overall situation of your dataset.
+
+| Cutoff | Interpretation | Use Case |
+|--------|---------------|----------|
+| 1,000  | Very lenient  | Exploratory, high sample loss tolerance |
+| 10,000 | Standard      | Recommended for most datasets |
+| 50,000 | Conservative  | High-quality samples only |
+
+### Contig Prevalence
+
+| min_samples | Interpretation | Use Case |
+|-------------|---------------|----------|
+| 2           | Lenient       | Small sample sizes (n < 10) |
+| 3           | Standard      | Recommended (n ≥ 10) |
+| 5           | Conservative  | Large sample sizes (n ≥ 20) |
 
 ### Mapping Quality Threshold (MAPQ)
 
