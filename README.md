@@ -13,6 +13,25 @@ This repository contains the complete bioinformatic pipeline used in:
 
 **📄 [Read the full thesis (PDF)](https://github.com/AdriaWu/soil-metagenome-workflow/blob/main/docs/HeyueWu_masters_thesis.pdf)**
 
+## Data Availability
+
+All raw sequencing data from this study are publicly available through NCBI:
+
+**🔗 [NCBI BioProject PRJNA1400213](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA1400213)**
+
+- **358 BioSamples** across three experimental datasets
+- **193 Gbp** of Oxford Nanopore R10 sequencing data
+- Quality-filtered reads (≥300 bp, mean Q≥15)
+- Comprehensive sample metadata included
+
+### Datasets
+
+The BioProject encompasses three complementary experiments:
+
+1. **Agricultural soil time series** - Boorowa (NSW) soil cores sampled in 2019 and 2023 with soil chemistry measurements
+2. **Plant productivity gradient** - Rhizosphere microbiomes across shoot biomass gradients in multiple crop hosts
+3. **Forest vs. river soil comparison** - ACT soils under different fertilizer treatments
+
 ### Key Features
 
 - **High-contiguity assembly** using nanoMDBG optimized for ONT R10 data
