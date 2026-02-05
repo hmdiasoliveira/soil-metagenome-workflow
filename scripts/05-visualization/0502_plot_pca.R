@@ -62,6 +62,16 @@ imputed_data_file <- file.path(OUTPUT_DIR, "imputed_data.rds")
 
 # Note: GBM (Geometric Bayesian Multiplicative) is very computationally expensive and memory-hungry. 
 #       It may be killed by OOM after running for a long time.
+# Less aggressive, less rigorous: "CZM" or "SQ"; worth trying
+# CZM: Count Zero Multiplicative replacement
+# SQ: Square-root replacement
+# Inside the function:
+# z.warning = 0.8  # Default threshold
+# z.delete = TRUE # Default
+# Threshold used to identify individual rows or columns including an excess of zeros/unobserved values (to be specified in proportions, default z.warning=0.8). 
+# If z.delete=TRUE, rows/columns identified by z.warning are omitted in the imputed data set.
+# Any contig (column) with >80% zeros is automatically removed
+# Any sample (row) with >80% zeros is automatically removed
 if (file.exists(imputed_data_file)) {
   cat("Loading pre-computed imputed data...\n")
   imputed_data <- readRDS(imputed_data_file)
@@ -79,21 +89,53 @@ if (file.exists(imputed_data_file)) {
 # Centered Log Ratio (CLR) transformation
 # The CLR transformation moves data from the compositional simplex to Euclidean space,
 # enabling the use of standard multivariate statistics.
-clr_data <- cenLR(imputed_data)$x
+clr_data <- cenLR(imputed_data)$x.clr
 
-# If cmultRepl is crashing, try to add pseudo-count (usually 1 or 0.5) to handle zeros
-#matrix_pseudo <- matrix + 0.5
-#res_cenLR <- cenLR(matrix_pseudo)
-#clr_data <- res_cenLR$x.clr
-#or, clr_data <- clr(acomp(matrix_pseudo))
+# Verify CLR properties
+colMeans(clr_data) %>% summary()  # Should be ~0
+any(is.na(clr_data))  # Should be FALSE
+dim(clr_data)
+
+# If cmultRepl is crashing, try to add pseudo-count to handle zeros
+# Use the smallest count divided by 2 (Martín-Fernández approach)
+#min_nonzero <- min(matrix[matrix > 0])
+#pseudo <- min_nonzero / 2
+#matrix_pseudo <- matrix + pseudo
+
+#clr_data <- cenLR(matrix_pseudo)$x.clr
+# or, clr_data <- clr(acomp(matrix_pseudo))
 
 # Calculate Aitchison distance
 # The Aitchison distance is the Euclidean distance calculated on CLR-transformed data.
 # It is the statistically appropriate beta-diversity metric for compositional data.
-# aDist() {composisions} expects raw positive compositions. CLR coordinates (clr_data), which contain negative values by design.
-#dist_aitchison <- aDist(clr_data)
+
 dist_aitchison <- dist(clr_data, method = "euclidean")
 # or use vegan::vegdist(clr_data, method = "euclidean")
+
+# ---- Compare original vs imputed ----
+original_samples <- rownames(matrix)
+imputed_samples <- rownames(imputed_data)
+
+removed_samples <- setdiff(original_samples, imputed_samples)
+
+cat("Removed samples:\n")
+print(removed_samples)
+
+# Check their characteristics
+if (length(removed_samples) > 0) {
+  removed_stats <- tibble(
+    sample = removed_samples,
+    total_reads = rowSums(matrix[removed_samples, ]),
+    n_zeros = rowSums(matrix[removed_samples, ] == 0),
+    sparsity = (n_zeros / ncol(matrix)) * 100
+  )
+  print(removed_stats)
+}
+
+# ---- Match kept samples ----
+valid_samples <- rownames(imputed_data)
+metadata_aligned <- metadata[metadata$sample_name %in% valid_samples, ]
+metadata_aligned <- metadata_aligned[match(valid_samples, metadata_aligned$sample_name), ]
 
 # ---- PERMANOVA Analysis ----
 cat("\nRunning PERMANOVA...\n")
