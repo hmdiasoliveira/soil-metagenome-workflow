@@ -83,7 +83,11 @@ do
 
     # Index BAM
     samtools index -c "$BAM_FILE"
+    
+    # Mapping summary
     samtools flagstat "$BAM_FILE" > "${BAM_FILE%.bam}.flagstat.txt"
+    samtools stats "$BAM_FILE" > "${BAM_FILE%.bam}.stats.txt"
+    samtools idxstats "$BAM_FILE" > "${BAM_FILE%.bam}.idxstats.txt"
 
     # Remove SAM to save space
     rm "$SAM_FILE"
