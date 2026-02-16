@@ -17,7 +17,16 @@ set -x
 # Description: Assemble Nanopore reads using metaMDBG (nanoMDBG method)
 # Input: Filtered FASTQ file (quality and length filtered)
 # Output: Assembled contigs in FASTA format
+#
+# VERSION NOTES:
+#   - metaMDBG v1.2: Assembly only. Polishing is a separate step using
+#     polish_nanomdbg.sh with 'metaMDBG polish'.
+#   - metaMDBG v1.3+: Polishing is integrated into 'metaMDBG asm' and
+#     contigs are automatically polished during assembly. The standalone
+#     'metaMDBG polish' subcommand has been removed. No separate polishing
+#     step is needed.
 # ============================================================================
+
 
 echo "Job started on: $(date)"
 echo "Host: $(hostname)"
@@ -30,6 +39,8 @@ source $HOME/anaconda3/etc/profile.d/conda.sh
 conda activate <CONDA_ASSEMBLY_ENV> || { echo "ERROR: Conda activation failed!" >&2; exit 1; }
 
 # Add metaMDBG and minimap2 to PATH
+# For v1.2: export PATH=<METAMDBG_V1.2_PATH>/build/bin:$PATH
+# For v1.3: export PATH=<METAMDBG_V1.3_PATH>/build/bin:$PATH
 export PATH=<METAMDBG_PATH>/build/bin:$PATH
 export PATH=<MINIMAP2_PATH>:$PATH
 

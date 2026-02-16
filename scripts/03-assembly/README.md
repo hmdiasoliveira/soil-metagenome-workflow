@@ -4,14 +4,27 @@ Scripts for metagenome assembly using metaMDBG and quality assessment.
 
 ## Prerequisites
 
-- metaMDBG (v1.2+)
+- metaMDBG v1.2 or v1.3+ (see version notes below)
 - minimap2 (v2.30+)
 - MetaQUAST (QUAST v5.0+)
 - MetaGeneMark
 - R (v4.0+) with tidyverse, plotly
 - Python 3.7+
 
+## metaMDBG Version Notes
+
+The assembly workflow differs depending on which version of metaMDBG you are using:
+
+- **v1.2**: Assembly (`metaMDBG asm`) and polishing (`metaMDBG polish`) are separate steps. Run `run_nanomdbg.sh` followed by `polish_nanomdbg.sh`.
+- **v1.3+**: Polishing is integrated into `metaMDBG asm` and contigs are automatically polished during assembly. The standalone `metaMDBG polish` subcommand has been removed. Only `run_nanomdbg.sh` is needed — skip Step 2.
+
+v1.3 also includes fixes for clipping events, zero-coverage regions, and chimeric contigs.
+
+**Note**: As of Feb 2026, the bioconda channel still distributes v1.2. To install v1.3, build from source following the [metaMDBG GitHub instructions](https://github.com/GaetanBenoitDev/metaMDBG).
+
 ## Workflow Overview
+
+### metaMDBG v1.2
 ```
 Filtered FASTQ
     ↓
@@ -26,6 +39,19 @@ Filtered FASTQ
 [5] analyze_contigs.R → Statistics & filtered lists
 ```
 
+### metaMDBG v1.3+
+```
+Filtered FASTQ
+    ↓
+[1] run_nanomdbg.sh → Polished contigs (auto-polished)
+    ↓
+[2] assembly_qc.sh → Quality reports
+    ↓
+[3] extract_contig_headers.py → Contig metadata CSV
+    ↓
+[4] analyze_contigs.R → Statistics & filtered lists
+```
+
 ---
 
 ## Configuration
@@ -34,12 +60,13 @@ Replace placeholders in scripts:
 
 - `<PROJECT>`: NCI project code
 - `<CONDA_ASSEMBLY_ENV>`: Path to conda environment
-- `<METAMDBG_PATH>`: metaMDBG installation directory
+- `<METAMDBG_PATH>`: metaMDBG installation directory (use version-specific path)
+- `<METAMDBG_V1.2_PATH>`: metaMDBG v1.2 installation (for polish_nanomdbg.sh)
 - `<MINIMAP2_PATH>`: minimap2 binary directory
 - `<METAGENEMARK_PATH>`: MetaGeneMark installation directory
 - `<INPUT_FILTERED_FASTQ>`: Quality-filtered reads from step 02
 - `<OUTPUT_ASSEMBLY_DIR>`: Directory for assembly output
-- `<OUTPUT_POLISH_DIR>`: Directory for polished contigs
+- `<OUTPUT_POLISH_DIR>`: Directory for polished contigs (v1.2 only)
 - `<OUTPUT_METAQUAST_DIR>`: Directory for QC reports
 
 ---
@@ -61,6 +88,9 @@ qsub run_nanomdbg.sh
 
 **Output**: `<OUTPUT_ASSEMBLY_DIR>/contigs.fasta.gz`
 
+- v1.2: These are unpolished contigs — proceed to Step 2.
+- v1.3+: These are auto-polished contigs — skip to Step 3.
+
 **Resource requirements**:
 - Queue: hugemem (required for large metagenomes)
 - Memory: 1470 GB
@@ -69,9 +99,10 @@ qsub run_nanomdbg.sh
 
 ---
 
-## Step 2: Polish Contigs
+## Step 2: Polish Contigs (metaMDBG v1.2 only)
 
-Polish assembled contigs using original reads to improve accuracy.
+Polish assembled contigs using original reads to improve accuracy. **Skip this step if using metaMDBG v1.3+**, which integrates polishing into the assembly command.
+
 ```bash
 # Edit script
 nano polish_nanomdbg.sh
@@ -98,7 +129,7 @@ Assess assembly quality using MetaQUAST.
 nano assembly_qc.sh
 
 # Set paths:
-# ASSEMBLY_FILES: Polished contigs from step 2
+# ASSEMBLY_FILES: Polished contigs (from step 2 if v1.2, or step 1 if v1.3+)
 # NANOPORE_READS: Original reads
 
 # Submit job
