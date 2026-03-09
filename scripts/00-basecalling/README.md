@@ -255,6 +255,86 @@ qsub run_dorado_demux.sh
 
 ---
 
+## Preserving BAM Tags (MM/ML) During Demultiplexing and FASTQ Conversion
+
+### Why This Matters
+
+When basecalling with modified base models (e.g. `--modified-bases 5mC_5hmC`), Dorado writes per-read methylation calls as MM and ML tags in the output BAM. These tags encode the positions and probabilities of base modifications (such as 5-Methylcytosine and 5-Hydroxymethylcytosine) for each read.
+
+The **demultiplexed BAM files** from `dorado demux` retain these tags. However, the standard BAM → FASTQ conversion step (`samtools fastq`) **drops all auxiliary tags including MM/ML**, because FASTQ format does not natively carry SAM tags.
+
+If you only need FASTQ for QC (NanoPlot, FastQC, Chopper), this is fine — those tools don't use methylation tags. But if you need to align the FASTQ and preserve methylation information in the aligned BAM, you must handle the conversion carefully.
+
+### Option A: Keep Demultiplexed BAMs (Recommended)
+
+The simplest approach is to **retain the per-barcode BAM files** from `dorado demux` and use them as the starting point for methylation-aware alignment, rather than converting to FASTQ first. You can then either:
+
+**A1. Align with `dorado aligner`** (takes BAM input directly):
+```bash
+dorado aligner reference.fa demuxed_barcode01.bam > barcode01_aligned.bam
+```
+- Preserves MM/ML tags natively
+- Uses the `lr:hq` minimap2 preset by default (suited for sup-basecalled reads)
+- Override with `--mm2-opts "-x map-ont"` if needed
+
+**A2. Convert to tag-preserved FASTQ, then align with minimap2:**
+```bash
+samtools fastq -T MM,ML demuxed_barcode01.bam \
+  | minimap2 -y -ax map-ont reference.fa - \
+  | samtools sort -o barcode01_aligned.bam
+```
+- `-T MM,ML`: writes MM and ML tags into the FASTQ header comment field
+- `-y`: copies FASTQ header comments into the SAM output as auxiliary tags
+
+To carry **all** tags (not just MM/ML):
+```bash
+samtools fastq -T '*' demuxed_barcode01.bam | minimap2 -y -ax map-ont reference.fa - | samtools sort -o barcode01_aligned.bam
+```
+
+**Note**: The `-y` flag must be a separate argument from `-ax`. Use `-ax map-ont -y`, not `-ax -y map-ont`.
+
+### Option B: Generate Tag-Preserved FASTQ During Demultiplexing
+
+If your workflow requires FASTQ files that retain methylation tags (e.g. for use in both QC and alignment), modify the BAM → FASTQ conversion in `run_dorado_demux.sh` to use `-T MM,ML`:
+
+```bash
+# Instead of:
+samtools fastq barcode01.bam | gzip > barcode01.fastq.gz
+
+# Use:
+samtools fastq -T MM,ML barcode01.bam | gzip > barcode01.fastq.gz
+```
+
+The resulting FASTQ will have MM/ML tags in the header comment field:
+```
+@read_id  MM:Z:C+h?,19,4;C+m?,19,4;  ML:B:C,234,51,20,1
+ACGTACGT...
++
+IIIIIIII...
+```
+
+These can then be aligned with `minimap2 -y` to carry the tags into the aligned BAM.
+
+### Verifying Tags Are Preserved
+
+After alignment, confirm MM/ML tags are present in the output:
+```bash
+samtools view aligned.bam | head -1 | tr '\t' '\n' | grep "^MM\|^ML"
+```
+
+If no output is returned, the tags were lost during conversion or alignment.
+
+### Summary: When to Use Each Approach
+
+| Workflow | Method | Tags Preserved? |
+|----------|--------|-----------------|
+| BAM → `dorado aligner` → aligned BAM | Option A1 | Yes |
+| BAM → `samtools fastq -T MM,ML` → `minimap2 -y` → aligned BAM | Option A2 | Yes |
+| BAM → `samtools fastq` (no `-T`) → FASTQ → `minimap2` → aligned BAM | Standard (current) | **No** |
+| BAM → `samtools fastq -T MM,ML` → FASTQ (for QC + alignment) | Option B | Yes |
+
+---
+
 ## Resource Requirements
 
 ### run_dorado_basecaller.sh (V100 GPU)

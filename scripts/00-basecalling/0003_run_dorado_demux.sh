@@ -1,13 +1,11 @@
 #!/bin/bash
 #PBS -P <PROJECT>
-#PBS -q dgxa100
-#PBS -l ncpus=16
-#PBS -l ngpus=1
-#PBS -l walltime=20:00:00
-#PBS -l storage=gdata/<PROJECT>+scratch/<PROJECT>
-#PBS -l mem=96G
-#PBS -l jobfs=100G
-#PBS -l other=hyperthread
+#PBS -q normal
+#PBS -l walltime=01:00:00
+#PBS -l mem=64GB
+#PBS -l jobfs=100GB
+#PBS -l ncpus=8
+#PBS -l storage=scratch/<PROJECT>+gdata/<PROJECT>
 #PBS -l wd
 
 set -euo pipefail
@@ -26,7 +24,7 @@ set -x
 # ============================================================================
 
 # Load required modules
-module load samtools/1.19
+module load samtools/1.22
 module load parallel
 module load cuda/12.8.0
 nvidia-smi || true
@@ -36,7 +34,7 @@ export LD_LIBRARY_PATH="${doradoBase}/lib:$LD_LIBRARY_PATH"
 doradoBin="${doradoBase}/bin/dorado"
 
 inputBAM="<INPUT_BAM_PATH>"
-fastqDir="<OUTPUT_FASTQ_DIR>"
+fastqDir="<OUTPUT_FASTQ_OR_BAM_DIR>"
 barcodeKit="<BARCODE_KIT>"  # Only needed for Approach 2
 
 mkdir -p "$fastqDir"

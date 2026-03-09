@@ -32,6 +32,66 @@ Filtered FASTQ
 
 ---
 
+## Preserving BAM Tags (MM/ML) Through FASTQ Conversion
+
+When working with modified basecalled data (e.g. Dorado with `--modified-bases 5mC_5hmC`), unaligned BAMs contain MM and ML tags encoding per-read methylation probabilities. These tags are **lost** during standard BAM → FASTQ conversion because FASTQ format does not natively carry SAM auxiliary tags.
+
+### Why This Matters
+
+If your input BAMs contain modification calls (MM/ML tags) and you need to preserve them through alignment, a standard `samtools fastq` → `minimap2` → `samtools sort` pipeline will silently drop the methylation information.
+
+### Option 1: `samtools fastq -T` + `minimap2 -y`
+
+Use `samtools fastq -T` to carry specified tags into the FASTQ header comments, then `minimap2 -y` to copy those comments into the SAM output:
+
+```bash
+samtools fastq -T MM,ML unaligned.bam \
+  | minimap2 -y -ax map-ont reference.fa - \
+  | samtools sort -o aligned.bam
+```
+
+- `-T MM,ML`: writes the MM and ML tags into the FASTQ header comment field
+- `-y`: copies FASTQ header comments into the SAM auxiliary tags
+
+To carry **all** tags (not just MM/ML):
+```bash
+samtools fastq -T '*' unaligned.bam \
+  | minimap2 -y -ax map-ont reference.fa - \
+  | samtools sort -o aligned.bam
+```
+
+### Option 2: `dorado aligner`
+
+Dorado's built-in aligner accepts unaligned BAM directly (any HTS format) and preserves MM/ML tags natively, bypassing FASTQ conversion entirely:
+
+```bash
+dorado aligner reference.fa unaligned.bam > aligned.bam
+```
+
+Notes on `dorado aligner`:
+- Uses the `lr:hq` minimap2 preset by default (suited for sup-basecalled high-accuracy reads)
+- Override with `--mm2-opts "-x map-ont"` if needed
+- Supports `--output-dir` for batch processing
+
+### Verifying Tags Are Preserved
+
+After alignment, confirm MM/ML tags are present in the output:
+```bash
+samtools view aligned.bam | head -1 | tr '\t' '\n' | grep "^MM\|^ML"
+```
+
+If no output is returned, the tags were lost during conversion/alignment.
+
+### Relevance to This Workflow
+
+The competitive mapping step in this pipeline converts FASTQ to BAM via minimap2. If your upstream FASTQ files were generated from modified basecalled BAMs **without** `-T MM,ML`, the methylation tags will already be absent. To preserve them:
+
+1. Start from the original unaligned BAMs (not FASTQ)
+2. Use `samtools fastq -T MM,ML` piped into `minimap2 -y` for the competitive mapping step
+3. Or use `dorado aligner` for the initial alignment and then filter the resulting BAM
+
+---
+
 ## Configuration
 
 ### Common Placeholders

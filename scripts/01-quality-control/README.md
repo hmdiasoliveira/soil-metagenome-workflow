@@ -18,6 +18,70 @@ Before running, edit each script to replace placeholders:
 - `<OUTPUT_BASE_DIR>`: Base directory for results
 - `<OUTPUT_FILTERED_DIR>`: Directory for filtered reads (chopper only)
 
+## Preserving BAM Tags (MM/ML) During FASTQ Conversion
+
+If your input data is in unaligned BAM format with modified basecalling tags (e.g. MM/ML from Dorado's `--modified-bases 5mC_5hmC`), converting to FASTQ with a standard `samtools fastq` command will **drop these tags**. This matters if you need to preserve methylation calls for downstream analysis.
+
+### Converting BAM to FASTQ While Preserving Tags
+
+Use `samtools fastq -T` to carry specified tags into the FASTQ header comments:
+
+```bash
+# Preserve MM and ML tags
+samtools fastq -T MM,ML unaligned.bam > reads_with_tags.fastq
+
+# Preserve all tags
+samtools fastq -T '*' unaligned.bam > reads_with_all_tags.fastq
+```
+
+The tags are written into the FASTQ header comment field (after the first whitespace in the `@` line). For example:
+```
+@read_id  MM:Z:C+h?,19,4;C+m?,19,4;  ML:B:C,234,51,20,1
+ACGTACGT...
++
+IIIIIIII...
+```
+
+### Aligning Tag-Preserved FASTQ with Minimap2
+
+When aligning FASTQ files that contain tags in the header comments, use minimap2's `-y` flag to copy those comments into the SAM output:
+
+```bash
+samtools fastq -T MM,ML unaligned.bam \
+  | minimap2 -y -ax map-ont reference.fa - \
+  | samtools sort -o aligned.bam
+```
+
+- `-T MM,ML`: writes the MM and ML tags into the FASTQ header comment field
+- `-y`: copies FASTQ header comments into the SAM auxiliary tags
+
+**Note**: The `-y` flag must be a separate argument, not grouped with `-ax` (e.g. `-ax map-ont -y`, not `-ax -y map-ont`).
+
+### Alternative: `dorado aligner`
+
+Dorado's built-in aligner accepts unaligned BAM directly and preserves MM/ML tags natively, bypassing FASTQ conversion:
+
+```bash
+dorado aligner reference.fa unaligned.bam > aligned.bam
+```
+
+This uses the `lr:hq` minimap2 preset by default (suited for sup-basecalled reads). Override with `--mm2-opts "-x map-ont"` if needed.
+
+### Verifying Tags Are Preserved
+
+After alignment, confirm MM/ML tags are present:
+```bash
+samtools view aligned.bam | head -1 | tr '\t' '\n' | grep "^MM\|^ML"
+```
+
+### Relevance to This QC Workflow
+
+The QC tools in this pipeline (NanoPlot, FastQC, Chopper) operate on FASTQ files and do not use or require MM/ML tags. However, if you are converting BAMs to FASTQ as input for this QC workflow **and** you need to use those same FASTQ files for downstream alignment with tag preservation, make sure to use `samtools fastq -T MM,ML` during the conversion step.
+
+If QC and alignment are separate workflows using different FASTQ files, this is not a concern — just ensure the alignment workflow starts from the original unaligned BAMs or from FASTQ files generated with `-T MM,ML`.
+
+---
+
 ## Workflow
 
 ### Step 1: NanoPlot (Read Statistics)
