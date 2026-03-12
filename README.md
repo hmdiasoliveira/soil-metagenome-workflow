@@ -1,5 +1,7 @@
 # Long-Read Soil Metagenomics Pipeline
 
+[![DOI](https://zenodo.org/badge/1089933240.svg)](https://doi.org/10.5281/zenodo.18974276)
+
 Workflow for high-quality genome assembly and differential abundance analysis 
 from Oxford Nanopore soil metagenomic data.
 
@@ -28,18 +30,14 @@ All raw sequencing data from this study are publicly available through NCBI:
 
 The BioProject encompasses three complementary experiments:
 
-1. **Agricultural soil time series** - Boorowa (NSW) soil cores sampled in 2019 and 2023 with soil chemistry measurements
+1. **Boorowa agricultural soil time series** — Depth-stratified soil cores (surface and subsurface) sampled in 2019 and 2023, with paired soil chemistry data
 2. **Plant productivity gradient** - Rhizosphere microbiomes across shoot biomass gradients in multiple crop hosts
 3. **Forest vs. river soil comparison** - ACT soils under different fertilizer treatments
 
-### Key Features
+### Workflow 
 
-- **High-contiguity assembly** using nanoMDBG optimized for ONT R10 data
-- **Rigorous contamination removal** through competitive mapping
-- **Compositionally-aware differential abundance testing** with empirical FDR
-- **Genome-resolved ecological interpretation** linking taxa to functional traits
+### Pipeline Summary
 
-### Workflow Summary
 ```
 Raw ONT Reads
     ↓
@@ -55,8 +53,26 @@ Read Mapping & Count Matrix
     ↓
 Differential Abundance (edgeR + empirical FDR)
     ↓
-Taxonomic Annotation & Visualization
+Community Analysis (PERMANOVA, betadisper, PCA)
+    ↓
+Taxonomic Annotation & Visualisation
 ```
+
+### Key Features
+
+- **High-contiguity assembly** using metaMDBG optimised for ONT R10 chemistry
+- **Rigorous contamination removal** through competitive mapping against host references
+- **Compositionally-aware analysis** — GBM zero imputation and centred log-ratio transformation for sparse count data
+- **Empirical FDR-controlled** differential abundance testing
+- **Genome-resolved ecological interpretation** linking taxa to functional traits
+
+## Key Results
+
+- **556,967 contigs** totaling 7.69 Gbp
+- **86 contigs >1 Mb** (longest: 4.52 Mb)
+- **923 circular replicons** (complete genetic elements)
+- **20% higher N50** vs. global SMAG catalogue
+- **194 differentially abundant contigs** across biomass gradient
 
 ## Quick Start
 
@@ -67,6 +83,7 @@ Taxonomic Annotation & Visualization
 - ~500 GB disk space for intermediate files
 
 ### Installation
+
 ```bash
 # Clone repository
 git clone https://github.com/AdriaWu/soil-metagenome-workflow.git
@@ -77,27 +94,28 @@ conda env create -f environment.yml
 conda activate soil-meta
 ```
 
-## Key Results
-
-- **556,967 contigs** totaling 7.69 Gbp
-- **86 contigs >1 Mb** (longest: 4.52 Mb)
-- **923 circular replicons** (complete genetic elements)
-- **20% higher N50** vs. global SMAG catalogue
-- **194 differentially abundant contigs** across biomass gradient
-
 ## Citation
 
-**📄 [Download full thesis (PDF)](https://github.com/AdriaWu/soil-metagenome-workflow/blob/main/docs/HeyueWu_masters_thesis.pdf)**
+If you use this workflow, please cite both the thesis and the code repository:
 
-If you use this workflow, please cite:
 ```bibtex
 @mastersthesis{wu2025longread,
-  author = {Wu, Heyue},
-  title = {Long-Read Soil Metagenomic Assembly and Differential Abundance 
-           Analysis Across Plant Shoot Biomass Gradients},
-  school = {Australian National University},
-  year = {2025},
-  type = {Master's Thesis}
+  author  = {Wu, Heyue},
+  title   = {Long-Read Soil Metagenomic Assembly and Differential
+             Abundance Analysis Across Plant Shoot Biomass Gradients},
+  school  = {Australian National University},
+  year    = {2025},
+  type    = {Master's Thesis}
+}
+
+@misc{wu2025soilmeta,
+  author    = {Wu, Heyue},
+  title     = {soil-metagenome-workflow},
+  year      = {2025},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.18974276},
+  url       = {https://doi.org/10.5281/zenodo.18974276},
+  note      = {Software}
 }
 ```
 
