@@ -9,11 +9,14 @@ from Oxford Nanopore soil metagenomic data.
 
 This repository contains the complete bioinformatic pipeline used in:
 
+Based on the original pipeline used in:
+
 > Wu, H. (2025). Long-Read Soil Metagenomic Assembly and Differential 
 > Abundance Analysis Across Plant Shoot Biomass Gradients. *Master's Thesis*, 
 > Australian National University.
 
 **📄 [Read the full thesis (PDF)](https://github.com/AdriaWu/soil-metagenome-workflow/blob/main/docs/HeyueWu_masters_thesis.pdf)**
+
 
 ## Data Availability
 
@@ -56,6 +59,8 @@ Differential Abundance (edgeR + empirical FDR)
 Community Analysis (PERMANOVA, betadisper, PCA)
     ↓
 Taxonomic Annotation & Visualisation
+    ↓
+Metagenomic pathway analysis
 ```
 
 ### Key Features
@@ -96,7 +101,7 @@ conda activate soil-meta
 
 ## Citation
 
-If you use this workflow, please cite both the thesis and the code repository:
+If you use this workflow, please cite both the thesis and the code repository, as well as the ....:
 
 ```bibtex
 @mastersthesis{wu2025longread,
